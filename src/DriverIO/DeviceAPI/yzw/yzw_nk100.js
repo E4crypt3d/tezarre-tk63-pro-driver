@@ -1,0 +1,353 @@
+/* Recovered from Tezarre Driver 1.1.31 - renderer module Fsrh */
+
+'use strict';
+var e =
+  (this && this.__awaiter) ||
+  function (e, t, i, a) {
+    return new (i || (i = Promise))(function (r, s) {
+      function o(e) {
+        try {
+          u(a.next(e));
+        } catch (t) {
+          s(t);
+        }
+      }
+      function n(e) {
+        try {
+          u(a.throw(e));
+        } catch (t) {
+          s(t);
+        }
+      }
+      function u(e) {
+        var t;
+        e.done
+          ? r(e.value)
+          : ((t = e.value),
+            t instanceof i
+              ? t
+              : new i(function (e) {
+                  e(t);
+                })).then(o, n);
+      }
+      u((a = a.apply(e, t || [])).next());
+    });
+  };
+(Object.defineProperty(exports, '__esModule', { value: !0 }), (exports.YZW_NK100 = void 0));
+const t = require('./../../../renderer/unitys/rgbNum.js'),
+  i = require('./../../../../unitys/tableValueForKey.js'),
+  a = require('./../../../unitys/timeFunc.js'),
+  r = require('./yzw_k68.js'),
+  s = require('./yzw_nk100Matrix.js'),
+  o = { upright: 0, separate: 1, intersect: 2 },
+  n = { 1: 0, 2: 16, 3: 32, 4: 48, 5: 64 },
+  u = { right: 0, left: 1, down: 2, up: 3 },
+  l = 4;
+class p extends r.YZW_K68 {
+  constructor() {
+    (super(...arguments),
+      (this.defaultMatrix = s.defaultMatrix_yzw_nk100),
+      (this.setLightSetting = (i) =>
+        e(this, void 0, void 0, function* () {
+          const e = Buffer.alloc(64);
+          e[0] = this.FEA_CMD_SET_LEDPARAM;
+          let r = 0,
+            s = 0,
+            p = 0,
+            c = 7,
+            g = i.dazzle;
+          const d = g ? this.DAZZLE : this.NORMAL,
+            h = g ? 0 : 4;
+          switch (i.type) {
+            case 'LightOff':
+              r = 0;
+              break;
+            case 'LightAlwaysOn':
+              ((r = 1), (p = i.value), (c = d));
+              break;
+            case 'LightBreath':
+              ((r = 2), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightNeon':
+              ((r = 3), (s = i.speed), (p = i.value));
+              break;
+            case 'LightWave':
+              ((r = 4),
+                (s = i.speed),
+                (c = void 0 !== i.option ? (u[i.option] << 4) | d : (u.right << 4) | d),
+                (p = i.value));
+              break;
+            case 'LightRipple':
+              ((r = 5), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightRaindrop':
+              ((r = 6), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightSnake':
+              ((r = 7),
+                (s = i.speed),
+                (c = 'z' === i.option || void 0 === i.option ? 0 | d : 16 | d),
+                (p = i.value));
+              break;
+            case 'LightPressAction':
+              ((r = 8), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightConverage':
+              ((r = 9), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightSineWave':
+              ((r = 10), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightKaleidoscope':
+              ((r = 11),
+                (s = i.speed),
+                (c = 'out' === i.option || void 0 === i.option ? 0 | d : 16 | d),
+                (p = i.value));
+              break;
+            case 'LightLineWave':
+              ((r = 12), (s = i.speed), (p = i.value), (c = this.DAZZLE));
+              break;
+            case 'LightUserPicture':
+              ((r = 13), (c = void 0 !== i.option ? n[i.option] : 0), (p = i.value));
+              break;
+            case 'LightLaser':
+              ((r = 14), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightCircleWave':
+              ((r = 15),
+                (s = i.speed),
+                (p = i.value),
+                (c = 'anti-clockwise' === i.option || void 0 === i.option ? 0 | d : 16 | d));
+              break;
+            case 'LightDazzing':
+              ((r = 16), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightRainDown':
+              ((r = 17), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightMeteor':
+              ((r = 18), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightPressActionOff':
+              ((r = 19), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightMusicFollow':
+              ((r = 20), (c = (o[i.option] << 4) | h), (p = i.value));
+              break;
+            case 'LightScreenColor':
+              ((r = 21), (p = l));
+              break;
+            case 'LightMusicFollow2':
+              ((r = 22),
+                (p = i.value),
+                (c = void 0 === i.option || 'upright' === i.option ? 0 | h : (o[i.option] << 4) | h));
+              break;
+            case 'LightTrain':
+              ((r = 23), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightFireWorks':
+              ((r = 24),
+                (s = i.speed),
+                (p = i.value),
+                (c = 'right' === i.option || void 0 === i.option ? 0 | d : 16 | d));
+              break;
+            case 'LightTrain':
+              ((r = 23), (s = i.speed), (p = i.value), (c = d));
+              break;
+            case 'LightFireWorks':
+              ((r = 24),
+                (s = i.speed),
+                (p = i.value),
+                (c = 'right' === i.option || void 0 === i.option ? 0 | d : 16 | d));
+          }
+          if (((e[1] = r), (e[2] = 4 - s), (e[3] = p), (e[4] = c), 'rgb' in i && void 0 !== i.rgb)) {
+            let a = i.rgb;
+            16777215 === a && (a = 16449530);
+            const r = t.numToRgb(a);
+            ((e[5] = r.r), (e[6] = r.g), (e[7] = r.b));
+          }
+          'LightUserPicture' === i.type && ((e[5] = 0), (e[6] = 200), (e[7] = 200));
+          const v = yield this.getBufEi(e);
+          return !!(yield this.writeFeatureCmd(v, 500)) && (yield a.sleep(this.BIGCMDDELAY), !0);
+        })),
+      (this.getLightSetting = () =>
+        e(this, void 0, void 0, function* () {
+          const e = { 0: 16711680, 1: 65280, 2: 255, 3: 16733440, 4: 7799039, 5: 16776960, 6: 16777215 },
+            a = Buffer.alloc(64);
+          a[0] = this.FEA_CMD_GET_LEDPARAM;
+          const r = yield this.getBufSe(a),
+            s = yield this.commomFeature(r);
+          if (void 0 === s) return;
+          const p = s[1],
+            c = 4 - s[2],
+            g = s[3],
+            d = s[4];
+          let h = t.rgbToNum(s[5], s[6], s[7]);
+          const v = d >> 4,
+            L = 15 & d,
+            z = (t) => {
+              if (t === this.DAZZLE || t === this.NORMAL) return;
+              const i = e[t];
+              void 0 !== i && (h = i);
+            },
+            b = L === this.DAZZLE,
+            y = 0 === d;
+          switch ((16449530 === h && (h = 16777215), p)) {
+            case 0:
+              return { type: 'LightOff' };
+            case 1:
+              return (
+                z(L),
+                console.error('dazzle: ', b),
+                { type: 'LightAlwaysOn', value: g, rgb: h, dazzle: b }
+              );
+            case 2:
+              return (z(L), { type: 'LightBreath', value: g, speed: c, rgb: h, dazzle: b });
+            case 3:
+              return { type: 'LightNeon', value: g, speed: c, option: 0 === v ? 'Default' : 'Random' };
+            case 4:
+              const e = i.valueForKey(u, v);
+              return {
+                type: 'LightWave',
+                value: g,
+                speed: c,
+                option: void 0 === e ? 'right' : e,
+                rgb: h,
+                dazzle: b,
+              };
+            case 5:
+              return (
+                z(L),
+                {
+                  type: 'LightRipple',
+                  value: g,
+                  speed: c,
+                  option: 0 === v ? 'full' : 'single',
+                  rgb: h,
+                  dazzle: b,
+                }
+              );
+            case 6:
+              return (z(L), { type: 'LightRaindrop', value: g, speed: c, rgb: h, dazzle: b });
+            case 7:
+              return (
+                z(L),
+                {
+                  type: 'LightSnake',
+                  value: g,
+                  speed: c,
+                  option: 0 === v ? 'z' : 'return',
+                  rgb: h,
+                  dazzle: b,
+                }
+              );
+            case 8:
+              return (
+                z(L),
+                {
+                  type: 'LightPressAction',
+                  value: g,
+                  speed: c,
+                  option: 0 === v ? 'onToOff' : 'offToOn',
+                  rgb: h,
+                  dazzle: b,
+                }
+              );
+            case 9:
+              return (z(L), { type: 'LightConverage', value: g, speed: c, rgb: h, dazzle: b });
+            case 10:
+              return (z(L), { type: 'LightSineWave', value: g, speed: c, rgb: h, dazzle: b });
+            case 11:
+              return (
+                z(L),
+                {
+                  type: 'LightKaleidoscope',
+                  option: 0 === v ? 'out' : 'in',
+                  value: g,
+                  speed: c,
+                  rgb: h,
+                  dazzle: b,
+                }
+              );
+            case 12:
+              return (z(L), { type: 'LightLineWave', value: g, speed: c, rgb: h, dazzle: b });
+            case 14:
+              return (z(L), { type: 'LightLaser', value: g, speed: c, rgb: h, dazzle: b });
+            case 15:
+              return (
+                z(L),
+                {
+                  type: 'LightCircleWave',
+                  value: g,
+                  speed: c,
+                  rgb: h,
+                  option: 0 === v ? 'anti-clockwise' : 'clockwise',
+                  dazzle: b,
+                }
+              );
+            case 16:
+              return (z(L), { type: 'LightDazzing', value: g, speed: c, rgb: h, dazzle: b });
+            case 17:
+              return (z(L), { type: 'LightRainDown', value: g, speed: c, rgb: h, dazzle: b });
+            case 18:
+              return (z(L), { type: 'LightMeteor', value: g, speed: c, rgb: h, dazzle: b });
+            case 19:
+              return (z(L), { type: 'LightPressActionOff', value: g, speed: c, rgb: h, dazzle: b });
+            case 13:
+              const t = i.valueForKey(n, v);
+              return { type: 'LightUserPicture', value: g, option: void 0 === t ? '1' : t };
+            case 20:
+              const a = i.valueForKey(o, v);
+              return {
+                type: 'LightMusicFollow',
+                value: g,
+                option: void 0 === a ? 'upright' : a,
+                rgb: h,
+                dazzle: y,
+              };
+            case 21:
+              return { type: 'LightScreenColor', value: l };
+            case 22:
+              const r = i.valueForKey(o, v);
+              return {
+                type: 'LightMusicFollow2',
+                option: void 0 === r ? 'upright' : r,
+                value: g,
+                rgb: h,
+                dazzle: y,
+              };
+            case 23:
+              return (z(L), { type: 'LightTrain', value: g, speed: c, rgb: h, dazzle: b });
+            case 24:
+              return (
+                z(L),
+                {
+                  type: 'LightFireWorks',
+                  value: g,
+                  speed: c,
+                  rgb: h,
+                  option: 0 === v ? 'right' : 'left',
+                  dazzle: b,
+                }
+              );
+            case 23:
+              return (z(L), { type: 'LightTrain', value: g, speed: c, rgb: h, dazzle: b });
+            case 24:
+              return (
+                z(L),
+                {
+                  type: 'LightFireWorks',
+                  value: g,
+                  speed: c,
+                  rgb: h,
+                  option: 0 === v ? 'right' : 'left',
+                  dazzle: b,
+                }
+              );
+            default:
+              return;
+          }
+        })));
+  }
+}
+exports.YZW_NK100 = p;

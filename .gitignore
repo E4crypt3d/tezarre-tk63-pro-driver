@@ -1,0 +1,10 @@
+# dependencies (prebuilt 2022 native modules, not portable to modern Node)
+node_modules/
+
+# original minified bundles, kept out of the source repo
+_original/
+
+# logs / OS junk
+*.log
+.DS_Store
+Thumbs.db
