@@ -7,6 +7,8 @@ The vendor never published the source and the original download/server is gone, 
 reconstructs it from the shipped Parcel bundles. It is published for preservation, interoperability
 and future maintenance.
 
+GitHub: https://github.com/E4crypt3d/tezarre-tk63-pro-driver
+
 > **Disclaimer:** not affiliated with Tezarre or rongyuan. All original code, branding and assets
 > remain the property of their respective owners. No warranty; use at your own risk.
 

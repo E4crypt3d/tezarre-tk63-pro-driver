@@ -1,6 +1,6 @@
 {
-  "name": "tezarre-tk63-pro-driver",
-  "version": "1.1.31",
+  "name": "Tezarre Driver",
+  "version": "1.0.0",
   "description": "Unofficial recovered source code for the Tezarre TK-63 Pro keyboard driver",
   "main": "./src/main/index.js",
   "author": "rongyuan",
