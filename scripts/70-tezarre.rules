@@ -1,0 +1,16 @@
+# Tezarre TK-63 Pro / SONiX-Primax keyboards.
+# Grants the active desktop user read/write access through systemd-logind's
+# uaccess ACL, so libusb (the app's `usb` dependency) can open the device.
+#
+# Install with (the 70- prefix matters: it must load before 73-seat-late.rules,
+# which applies the uaccess ACL):
+#   sudo cp scripts/70-tezarre.rules /etc/udev/rules.d/70-tezarre.rules
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# then unplug/replug the keyboard.
+
+# Primax (TK-63 Pro reports as 0461:4003 in its vendor mode)
+SUBSYSTEM=="usb", ATTR{idVendor}=="0461", TAG+="uaccess"
+
+# SONiX (1d57:fa60 per the original Tezarre device definition)
+SUBSYSTEM=="usb", ATTR{idVendor}=="1d57", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="3151", TAG+="uaccess"

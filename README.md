@@ -53,13 +53,40 @@ The app is Electron **6.0.10** (Node 12 / ABI 73). It depends on native modules
 (`usb`, `ffi-napi`, `sqlite3`) that must be built for that ABI.
 
 ```bash
-npm install          # with Node 12 + working native build toolchain
+npm install              # Node 18+ (tested with 20, 22 and 24)
+npm run rebuild:native   # once: builds the natives for Electron 6 (ABI 73)
 npm start
 ```
 
-`npm install` on a modern Node will almost certainly fail while building the 2022 native
-dependencies. The practical way to run it is to use the `node_modules` folder that shipped with the
-original installer, or to rebuild the native modules against Electron 6 on Node 12.
+`npm install` works on a modern Node with no extra flags. Two things make that possible:
+
+* `.npmrc` sets `ignore-scripts=true`. Dependency lifecycle scripts are skipped, because the 2022
+  native modules only build for Electron 6 / ABI 73 and compiling them against a modern system Node
+  aborts the install. `npm run rebuild:native` then downloads the Electron binary and builds
+  `usb`, `sqlite3`, `ffi-napi` and `ref-napi` against the Electron 6 headers instead.
+* `typeorm` is pinned to `0.2.25`. Later `0.2.x` releases declare `sqlite3@^5` as a peer, which
+  conflicts with the `sqlite3@4` the app actually runs on (npm aborts with `ERESOLVE`).
+
+`rebuild:native` is a bash script (`scripts/rebuild-native.sh`) that needs `python3`; on Linux it
+builds `usb` without libudev. It replaces the previous advice of copying `node_modules` out of the
+original installer. On Windows run it from Git Bash/WSL with the MSVC build tools installed.
+
+The UI, SQLite storage and USB enumeration were verified on Linux this way. Windows uses the
+`dist/hid32.*.dll` HID path. Linux takes the macOS libusb path (`MacUSB`): the device is detected
+and opened, but the firmware handshake (`whoAmI`) currently returns an invalid id, so the UI stays
+on "Searching Device". Windows remains the supported path for actually configuring the keyboard.
+
+### Linux permissions
+
+On Linux the app opens the keyboard with libusb. Without a udev rule `device.open()` fails with
+`LIBUSB_ERROR_ACCESS`. The rule must be numbered **before** `73-seat-late.rules`, otherwise
+systemd-logind's `uaccess` builtin has already run and the ACL is never applied:
+
+```bash
+sudo cp scripts/70-tezarre.rules /etc/udev/rules.d/70-tezarre.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+# then unplug/replug the keyboard
+```
 
 `dist/` is **required at runtime** (not a build output you can delete): the asset modules export
 names such as `/normal.0320e68b.png`, and code resolves them against `dist/` via `__dirname`.

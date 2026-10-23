@@ -6,13 +6,15 @@
   "author": "rongyuan",
   "license": "ISC",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "rebuild:native": "bash scripts/rebuild-native.sh"
   },
   "engines": {
-    "node": ">=12 <13"
+    "node": ">=18"
   },
   "devDependencies": {
-    "electron": "6.0.10"
+    "electron": "6.0.10",
+    "node-gyp": "^11.0.0"
   },
   "dependencies": {
     "@emotion/core": "^10.0.28",
@@ -45,7 +47,7 @@
     "request": "^2.88.2",
     "rxjs": "^6.5.4",
     "sqlite3": "^4.1.1",
-    "typeorm": "^0.2.25",
+    "typeorm": "0.2.25",
     "universal-analytics": "^0.4.23",
     "usb": "1.6.3"
   }
