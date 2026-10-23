@@ -73,6 +73,11 @@ const a = require('mobx'),
   C = require('./../sdk/DriverIO/usb/USBDevice.js'),
   D = 'reading...';
 let x, L;
+// Fields the light protocol actually carries; two settings that match on all of
+// them would produce the same command buffer, so writing one is enough.
+const LIGHT_SETTING_FIELDS = ['type', 'value', 'speed', 'option', 'rgb', 'dazzle'],
+  isSameLightSetting = (e, t) =>
+    void 0 !== e && void 0 !== t && LIGHT_SETTING_FIELDS.every((r) => e[r] === t[r]);
 class F extends y.BaseStore {
   constructor() {
     (super(),
@@ -294,6 +299,12 @@ class F extends y.BaseStore {
     });
   }
   setFormalLightName() {
+    // Called from the light page's render, which re-runs on every observable
+    // change (25 times a second while the screen-colour effect streams). The
+    // map only depends on the device, so rebuilding it is skipped otherwise.
+    const e = this.currentDev && this.currentDev.deviceType ? this.currentDev.deviceType.id : void 0;
+    if (F.lightNameMapDeviceId === e) return;
+    F.lightNameMapDeviceId = e;
     F.lightNameMap = {
       LightOff: b.res.text.关闭(),
       LightAlwaysOn: b.res.text.常亮(),
@@ -341,6 +352,7 @@ class F extends y.BaseStore {
   loadCurrentConfig() {
     return l(this, void 0, void 0, function* () {
       return (
+        this.clearPendingLightSetting(),
         yield this.stopLight(),
         yield S.sleep(400),
         (this.currentConfig.name = 'loading'),
@@ -412,7 +424,8 @@ class F extends y.BaseStore {
               : t.type.indexOf('LightScreenColor'))) ||
           (yield S.sleep(500)),
         this.doAsync(this.currentDev.getLightSetting, (e) => {
-          ((this.currentConfig.light = e),
+          (this.clearPendingLightSetting(),
+            (this.currentConfig.light = e),
             'LightUserPicture' === (null == e ? void 0 : e.type) && this.getLightPic(),
             this.saveCurrentConfig());
         }),
@@ -421,7 +434,8 @@ class F extends y.BaseStore {
   }
   refresh() {
     var e, t, i, o, r;
-    ((this.currentDev = p.DBService.getCurrentDev()),
+    (this.clearPendingLightSetting(),
+      (this.currentDev = p.DBService.getCurrentDev()),
       void 0 !== this.currentDev &&
         void 0 === this.currentConfig.name &&
         this.getCurrentProfile().then((e) =>
@@ -545,24 +559,76 @@ class F extends y.BaseStore {
       );
   }
   setLightSetting(e) {
-    return l(this, void 0, void 0, function* () {
-      this.blockSetLight
-        ? f.mobxStore.toastStore.setInfo('灯效关闭请开启后切换')
-        : this.checkDev() &&
-          this.doAsync(
-            this.currentDev.setLightSetting,
-            (t) =>
-              l(this, void 0, void 0, function* () {
-                t &&
-                  ((this.currentConfig.light = e),
-                  this.saveCurrentConfig(),
-                  'LightUserPicture' === e.type && void 0 !== e.option && this.getLightPic(),
-                  -1 !== e.type.indexOf('LightMusicFollow') && f.mobxStore.musicFollowStore.stop(),
-                  -1 !== e.type.indexOf('LightScreenColor') && f.mobxStore.screenStore.stop());
-              }),
-            e,
-          );
+    if (this.blockSetLight) {
+      f.mobxStore.toastStore.setInfo('灯效关闭请开启后切换');
+      return Promise.resolve();
+    }
+    if (!this.checkDev()) return Promise.resolve();
+    // The page already shows this exact effect, so there is nothing to send.
+    // The page state is used instead of a cache of the last write because the
+    // light also changes from the device side (getLightSetting, profile
+    // switch, reconnect) without going through this method.
+    if (isSameLightSetting(e, this.currentConfig.light)) return Promise.resolve();
+    // A single light write costs ~600 ms: the protocol inserts a fixed settle
+    // delay before the command, and the device needs another moment after it.
+    // Blocking the window behind the loading overlay for that long made every
+    // picked effect look like an app reload, so the page state is updated
+    // straight away and the device is written in the background. Writes are
+    // serialised, and a change made while one is in flight replaces the
+    // pending value, so a burst of clicks collapses into the latest value
+    // instead of several overlapping writes.
+    const previous = this.currentConfig.light;
+    this.currentConfig.light = e;
+    this.pendingLightSetting = { setting: e, previous, dev: this.currentDev };
+    return this.flushLightSetting();
+  }
+  clearPendingLightSetting() {
+    ((this.pendingLightSetting = void 0), this.lightWriteQueue && (this.lightWriteQueue.pending = void 0));
+  }
+  flushLightSetting() {
+    const q =
+        this.lightWriteQueue ||
+        (this.lightWriteQueue = { busy: !1, done: void 0, pending: void 0 }),
+      queued = this.pendingLightSetting;
+    this.pendingLightSetting = void 0;
+    if (void 0 !== queued) q.pending = queued;
+    if (q.busy) return q.done;
+    q.busy = !0;
+    q.done = new Promise((resolve) => {
+      const finish = () => ((q.busy = !1), (q.done = void 0), resolve());
+      const step = () => {
+        const next = q.pending;
+        q.pending = void 0;
+        // The device was swapped (or removed) after this click was queued, so
+        // the setting no longer belongs to the device that is selected now.
+        if (void 0 === next || void 0 === next.dev || next.dev !== this.currentDev) return finish();
+        this.doAsyncQuiet(
+          next.dev.setLightSetting,
+          (result) => {
+            if (!1 === result) {
+              // The device refused the command: show the state the page had
+              // before the click instead of leaving an unapplied effect
+              // selected, and persist the rollback (another save may already
+              // have stored the optimistic value while the write was running).
+              if (void 0 !== next.previous && isSameLightSetting(this.currentConfig.light, next.setting)) {
+                ((this.currentConfig.light = next.previous), this.saveCurrentConfig());
+              }
+              return;
+            }
+            this.applyLightSetting(next.setting);
+          },
+          next.setting,
+        ).then(step, step);
+      };
+      step();
     });
+    return q.done;
+  }
+  applyLightSetting(e) {
+    (this.saveCurrentConfig(),
+      'LightUserPicture' === e.type && void 0 !== e.option && this.getLightPic(),
+      -1 !== e.type.indexOf('LightMusicFollow') && f.mobxStore.musicFollowStore.stop(),
+      -1 !== e.type.indexOf('LightScreenColor') && f.mobxStore.screenStore.stop());
   }
   setLogoLightSetting(e) {
     var t;
@@ -705,7 +771,8 @@ class F extends y.BaseStore {
     });
   }
   setCurrentConfig(e) {
-    ((this.currentConfig = e),
+    (this.clearPendingLightSetting(),
+      (this.currentConfig = e),
       this.doAsync(
         p.DBService.setCurrentConfig,
         (e) => {
