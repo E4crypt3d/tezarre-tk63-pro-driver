@@ -58,23 +58,70 @@ npm run rebuild:native   # once: builds the natives for Electron 6 (ABI 73)
 npm start
 ```
 
-`npm install` works on a modern Node with no extra flags. Two things make that possible:
+`npm install` works on a modern Node with no extra flags. Three things make that possible:
 
 * `.npmrc` sets `ignore-scripts=true`. Dependency lifecycle scripts are skipped, because the 2022
   native modules only build for Electron 6 / ABI 73 and compiling them against a modern system Node
   aborts the install. `npm run rebuild:native` then downloads the Electron binary and builds
-  `usb`, `sqlite3`, `ffi-napi` and `ref-napi` against the Electron 6 headers instead.
+  `usb` and `sqlite3` against the Electron 6 headers instead.
 * `typeorm` is pinned to `0.2.25`. Later `0.2.x` releases declare `sqlite3@^5` as a peer, which
   conflicts with the `sqlite3@4` the app actually runs on (npm aborts with `ERESOLVE`).
+* `ref-array-napi` declares `ref-napi@^3.0.1`, so npm installs a second, nested `ref-napi`. That
+  nested build has no usable binary when lifecycle scripts are skipped and either spins forever or
+  throws `Could not locate the bindings file` on `require`. The `overrides` entry in `package.json`
+  pins it to the same `ref-napi@1.5.2` used everywhere else, which ships Node-API prebuilds, so the
+  tree contains a single copy.
 
-`rebuild:native` is a bash script (`scripts/rebuild-native.sh`) that needs `python3`; on Linux it
-builds `usb` without libudev. It replaces the previous advice of copying `node_modules` out of the
-original installer. On Windows run it from Git Bash/WSL with the MSVC build tools installed.
+`rebuild:native` is a cross-platform entry point (`scripts/rebuild-native.js`) that dispatches to
+the platform script:
 
-The UI, SQLite storage and USB enumeration were verified on Linux this way. Windows uses the
-`dist/hid32.*.dll` HID path. Linux takes the macOS libusb path (`MacUSB`): the device is detected
-and opened, but the firmware handshake (`whoAmI`) currently returns an invalid id, so the UI stays
-on "Searching Device". Windows remains the supported path for actually configuring the keyboard.
+| Platform      | Script                       | Requirements                                                       |
+| ------------- | ---------------------------- | ------------------------------------------------------------------ |
+| Linux / macOS | `scripts/rebuild-native.sh`  | `bash`, `python3`; on Linux it builds `usb` without libudev        |
+| Windows       | `scripts/rebuild-native.ps1` | PowerShell 5.1+, Python 3, VS Build Tools with the C++ workload   |
+
+The platform scripts can also be run directly with `npm run rebuild:native:unix` and
+`npm run rebuild:native:windows`. They download the Electron binary — re-downloading it when the
+architecture does not match — then build `sqlite3` and `usb` against the Electron 6 headers.
+`ffi-napi` and `ref-napi` ship Node-API prebuilds that Electron 6 can load, so they are only
+compiled when no prebuild is present. This replaces the previous advice of copying `node_modules`
+out of the original installer.
+
+If you only want to run the app on Windows and do not need a C++ toolchain, the repo includes the
+32-bit addons in `prebuilt/win32-ia32/` (~2.9 MB):
+
+```powershell
+npm install
+npm run prebuilt:windows   # downloads the Electron ia32 runtime, copies the addons
+npm start
+```
+
+The Electron runtime itself (~55 MB compressed) is not committed and is downloaded on first use.
+
+### Windows notes
+
+* **The app runs as 32-bit Electron.** `dist/hid32.*.dll` is an x86 DLL, and ffi-napi fails with
+  `Dynamic Linking Error: Win32 error 193` (bad executable format) when a 64-bit Electron tries to
+  load it — the window opens but stays black. `npm run rebuild:native:windows` therefore downloads
+  `electron-v6.0.10-win32-ia32` and builds the addons with `--arch=ia32`. Use `-Arch x64` only if
+  you supply a 64-bit build of the DLL.
+* The script needs Python 3 and the Visual Studio Build Tools with the **Desktop development with
+  C++** workload. Run it from PowerShell; Git Bash/WSL is not required.
+* If a `dll` folder exists under `%APPDATA%\Tezarre Driver`, its `hid*.dll` files are copied over
+  `dist/` at startup (the original in-app updater path).
+* Only one instance can run. `npm start` exits immediately, with no window and no error, while
+  another copy is alive — including a hidden tray instance. Check with `Get-Process electron` before
+  assuming startup is broken.
+* DevTools are opt-in with `$env:TEZARRE_DEVTOOLS=1`. Electron 6 never emits `ready-to-show` when
+  DevTools is opened while the window is still hidden, which made source runs produce no window at
+  all; the window is now shown first and DevTools opens afterwards.
+
+Verified on Windows 11 x64 with the ia32 build: the UI renders (v1.1.31, firmware V302) and the
+SQLite store initialises. On Linux, the UI, SQLite storage and USB enumeration were verified the
+same way. Windows uses the `dist/hid32.*.dll` HID path. Linux takes the macOS libusb path
+(`MacUSB`): the device is detected and opened, but the firmware handshake (`whoAmI`) currently
+returns an invalid id, so the UI stays on "Searching Device". Windows remains the supported path
+for actually configuring the keyboard.
 
 ### Linux permissions
 
@@ -95,6 +142,21 @@ The `hid32.*.dll` next to them is loaded through `ffi-napi`.
 User data lives in `%APPDATA%\Tezarre Driver` (`db` is a SQLite database with profiles, macros and
 settings). `TEZARRE_PORTABLE=1` is a small addition in `src/main/index.js` that keeps user data in a
 `UserData` folder next to the executable instead.
+
+### Changes to the recovered code
+
+Everything below is a deliberate, minimal deviation from the recovered 2022 source. The device
+protocol and UI code are untouched.
+
+* `src/main/index.js` — the dev-only `openDevTools()` call was moved from window creation into the
+  `ready-to-show` handler and is gated behind `TEZARRE_DEVTOOLS=1`. On Electron 6, opening DevTools
+  while the window is hidden suppresses `ready-to-show`, so an unpackaged run never showed a window.
+* `package.json` — added the `rebuild:native` scripts, the `prebuilt:windows` script, and the
+  `ref-array-napi` → `ref-napi@1.5.2` override described above.
+* `.npmrc` — `ignore-scripts=true` so `npm install` can complete on modern Node; the build steps are
+  moved into the platform rebuild scripts.
+* `scripts/rebuild-native.js`, `scripts/rebuild-native.ps1` — cross-platform and Windows rebuild
+  entry points. `prebuilt/win32-ia32/` holds the 32-bit addons compiled for Electron 6.
 
 ## How it was recovered
 
