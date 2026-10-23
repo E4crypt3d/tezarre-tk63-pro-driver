@@ -6,13 +6,23 @@
   "author": "rongyuan",
   "license": "ISC",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "rebuild:native": "node scripts/rebuild-native.js",
+    "rebuild:native:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-native.ps1",
+    "rebuild:native:unix": "bash scripts/rebuild-native.sh",
+    "prebuilt:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-native.ps1 -Prebuilt"
   },
   "engines": {
-    "node": ">=12 <13"
+    "node": ">=18"
+  },
+  "overrides": {
+    "ref-array-napi": {
+      "ref-napi": "1.5.2"
+    }
   },
   "devDependencies": {
-    "electron": "6.0.10"
+    "electron": "6.0.10",
+    "node-gyp": "^11.0.0"
   },
   "dependencies": {
     "@emotion/core": "^10.0.28",
@@ -45,7 +55,7 @@
     "request": "^2.88.2",
     "rxjs": "^6.5.4",
     "sqlite3": "^4.1.1",
-    "typeorm": "^0.2.25",
+    "typeorm": "0.2.25",
     "universal-analytics": "^0.4.23",
     "usb": "1.6.3"
   }

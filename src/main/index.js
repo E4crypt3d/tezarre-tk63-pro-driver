@@ -64,11 +64,17 @@ const d = () => {
         webPreferences: { nodeIntegration: !0 },
       })),
       'darwin' === process.platform && c.setWindowButtonVisibility(!1),
-      a.app.isPackaged || c.webContents.openDevTools(),
       c.loadFile(i.join(i.dirname(require('path').resolve(__dirname, '../../dist')), 'index.html')),
       c.on('closed', () => (c = null)),
       c.on('ready-to-show', function () {
-        c && c.show();
+        if (!c) return;
+        c.show();
+        // DevTools must open after show(): on Electron 6, opening it while the
+        // window is still hidden suppresses 'ready-to-show' and the window
+        // never appears. Opt in with TEZARRE_DEVTOOLS=1.
+        !a.app.isPackaged &&
+          '1' === process.env.TEZARRE_DEVTOOLS &&
+          c.webContents.openDevTools();
       }),
       c.webContents.on('crashed', (e, t) => {
         setImmediate(() => {
