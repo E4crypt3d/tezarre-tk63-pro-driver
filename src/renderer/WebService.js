@@ -666,7 +666,10 @@ var _, b;
           return (
             'mouse' === t.type
               ? ((r.dpi = yield t.getDpi()), (r.logoLight = yield t.getLogoLightSetting()))
-              : (r.lightPic = yield t.getLightPic()),
+              : // the per-key picture is a 6-packet read and only has a meaning
+                // while a custom picture is the active effect; every other mode
+                // was paying for it on each config load
+                'LightUserPicture' === (r.light && r.light.type) && (r.lightPic = yield t.getLightPic()),
             r
           );
         })),
@@ -805,7 +808,14 @@ var _, b;
             a.equals(e.dpi, i.dpi) &&
             a.equals(e.reportRate, i.reportRate) &&
             n &&
-            a.equals(e.lightPic, i.lightPic) &&
+            // the per-key picture only means something for the custom-picture
+            // effect, and it is only read from the device in that mode, so a
+            // stored picture from an earlier mode must not make the config look
+            // different from the device
+            a.equals(
+              'LightUserPicture' === (e.light && e.light.type) ? e.lightPic : void 0,
+              'LightUserPicture' === (i.light && i.light.type) ? i.lightPic : void 0,
+            ) &&
             a.equals(e.logoLight, i.logoLight)
         );
       }));

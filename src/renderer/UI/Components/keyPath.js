@@ -38,18 +38,21 @@ const o = r(require('path')),
   i = r(require('url')),
   n = require('./../../appConfig.js'),
   u = require('./../../mobxStore/store.js');
-exports.getKeyPath = () =>
-  u.mobxStore.deviceStore.currentDev
-    ? i
+// The result only changes when the selected device does, but the pages that use
+// it call this on every render (including the light page's streaming frames),
+// so the file URL is built once per device.
+let cachedName = null,
+  cachedUrl = '';
+exports.getKeyPath = () => {
+  const e = u.mobxStore.deviceStore.currentDev;
+  if (!e) return '';
+  const t = e.deviceType.name;
+  return t === cachedName
+    ? cachedUrl
+    : ((cachedName = t),
+      (cachedUrl = i
         .pathToFileURL(
-          o.join(
-            require('path').resolve(__dirname, '../../../../dist'),
-            '..',
-            'company',
-            'company_' + n.kCompany,
-            'dev',
-            u.mobxStore.deviceStore.currentDev.deviceType.name + '.png',
-          ),
+          o.join(require('path').resolve(__dirname, '../../../../dist'), '..', 'company', 'company_' + n.kCompany, 'dev', t + '.png'),
         )
-        .toString()
-    : '';
+        .toString()));
+};

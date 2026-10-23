@@ -144,14 +144,20 @@ class a extends p.BaseStore {
     ((this.errType = 'error'), (this.errMsg = e));
   }
   setState(e = 'idle', t) {
-    ('bussy' === e
-      ? (clearInterval(v),
+    if ('bussy' === e) {
+      (clearInterval(v),
         this.senders.push(t),
         (v = setTimeout(() => {
           this.senders.some((e) => e === t) && this.setState('idle', t);
-        }, 1e4)))
-      : this.senders.splice(this.senders.indexOf(t), 1),
-      0 === this.senders.length ? (this.state = 'idle') : (this.state = 'bussy'));
+        }, 1e4)));
+    } else {
+      // indexOf returns -1 for a key that is already gone, and splice(-1, 1)
+      // then drops the last *running* sender, which can leave the window on the
+      // loading overlay for an operation that already finished.
+      const i = this.senders.indexOf(t);
+      -1 !== i && this.senders.splice(i, 1);
+    }
+    this.state = 0 === this.senders.length ? 'idle' : 'bussy';
   }
   get isError() {
     return 'error' === this.errType && '' !== this.errMsg;

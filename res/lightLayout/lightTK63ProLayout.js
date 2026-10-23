@@ -79,6 +79,19 @@
           rgb: !0,
           dazzle: !0,
         },
+        // implemented by the YC200 protocol (codes 23 and 24) but never listed
+        // for this keyboard; both were confirmed against a TK-63 Pro
+        { type: 'LightTrain', maxValue: 4, minValue: 0, maxSpeed: 4, minSpeed: 0, rgb: !0, dazzle: !0 },
+        {
+          type: 'LightFireWorks',
+          maxValue: 4,
+          minValue: 0,
+          maxSpeed: 4,
+          minSpeed: 0,
+          options: ['right', 'left'],
+          rgb: !0,
+          dazzle: !0,
+        },
         { type: 'LightUserPicture', options: ['1'], maxValue: 4, minValue: 0 },
         {
           type: 'LightMusicFollow3',

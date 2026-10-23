@@ -234,11 +234,15 @@ class y extends c.BaseStore {
     console.log('音乐律动开启source错误', t);
   }
 }
-(t([o.observable, e('design:type', Object)], y.prototype, 'judgeDataArray', void 0),
-  t([o.observable, e('design:type', Object)], y.prototype, 'musicDataArray', void 0),
-  t([o.observable, e('design:type', Object)], y.prototype, 'musicDelt', void 0),
-  t([o.observable, e('design:type', Object)], y.prototype, 'music2Delt', void 0),
-  t([o.observable, e('design:type', Object)], y.prototype, 'music3Delt', void 0),
+// These buffers are replaced wholesale every 30 ms and contain up to 1024
+// entries, so deep observability only made MobX wrap a thousand values per
+// tick. .ref keeps the reassignment reaction (device streaming depends on it)
+// without the wrapping.
+(t([o.observable.ref, e('design:type', Object)], y.prototype, 'judgeDataArray', void 0),
+  t([o.observable.ref, e('design:type', Object)], y.prototype, 'musicDataArray', void 0),
+  t([o.observable.ref, e('design:type', Object)], y.prototype, 'musicDelt', void 0),
+  t([o.observable.ref, e('design:type', Object)], y.prototype, 'music2Delt', void 0),
+  t([o.observable.ref, e('design:type', Object)], y.prototype, 'music3Delt', void 0),
   t([o.observable, e('design:type', Object)], y.prototype, 'isStart', void 0),
   t(
     [o.action.bound, e('design:type', Function), e('design:paramtypes', []), e('design:returntype', Promise)],

@@ -143,7 +143,9 @@ class m extends d.BaseStore {
 }
 (r([s.observable, n('design:type', Number)], m.prototype, 'screenIndex', void 0),
   r([s.observable, n('design:type', Array)], m.prototype, 'screenArr', void 0),
-  r([s.observable, n('design:type', Object)], m.prototype, 'screenDataArray', void 0),
+  // replaced wholesale on every captured frame; the reaction that streams it to
+  // the keyboard only needs to know about the reassignment
+  r([s.observable.ref, n('design:type', Object)], m.prototype, 'screenDataArray', void 0),
   r([s.observable, n('design:type', Object)], m.prototype, 'timer', void 0),
   r([s.observable, n('design:type', Boolean)], m.prototype, 'test', void 0),
   r(
