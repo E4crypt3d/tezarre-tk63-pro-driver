@@ -181,6 +181,38 @@ const y = (e) => {
               }),
           }),
         ),
+        o.default.createElement(
+          i.dj.View,
+          { w: 400, h: 131, x: 491, y: 340 },
+          o.default.createElement(i.dj.Text, {
+            h: 25,
+            y: 0,
+            type: '个人中心标题',
+            text: 'GitHub',
+          }),
+          o.default.createElement(i.dj.Line, { w: 400, y: 41, lineColor: 'UserCenter' }),
+          o.default.createElement(i.dj.Text, {
+            h: 20,
+            y: 60,
+            text: 'Community recovery, maintained upstream.',
+            type: '描述',
+          }),
+          o.default.createElement(i.dj.Text, {
+            h: 20,
+            y: 78,
+            text: 'github.com/E4crypt3d/tezarre-tk63-pro-driver',
+            type: '描述',
+          }),
+          o.default.createElement(i.dj.Button, {
+            w: 160,
+            h: 32,
+            y: 99,
+            text: 'Open on GitHub',
+            mode: 'BorderBackground',
+            clickHandle: () =>
+              p.shell.openExternal('https://github.com/E4crypt3d/tezarre-tk63-pro-driver'),
+          }),
+        ),
       ),
     )
   );
