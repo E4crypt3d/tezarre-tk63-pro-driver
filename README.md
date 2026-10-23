@@ -193,3 +193,10 @@ Nothing else was changed semantically.
 ## Credits
 
 Original driver © rongyuan / Tezarre. Recovered and documented for the community.
+
+## Support
+
+* Origin repository (source recovery): https://github.com/E4crypt3d/tezarre-tk63-pro-driver
+* This fork, where Windows support is continued by [@Salmankbdev](https://github.com/Salmankbdev):
+  https://github.com/Salmankbdev/tezarre-tk63-pro-driver
+
