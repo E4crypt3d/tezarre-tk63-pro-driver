@@ -193,3 +193,9 @@ Nothing else was changed semantically.
 ## Credits
 
 Original driver © rongyuan / Tezarre. Recovered and documented for the community.
+
+## Support
+
+* Origin repository (community recovery, active development):
+  https://github.com/E4crypt3d/tezarre-tk63-pro-driver
+
