@@ -53,8 +53,9 @@ build node_modules/sqlite3 \
   -Dmodule_path="lib/binding/${ELECTRON_TAG}-${PLATFORM}-${ARCH}"
 
 # Only used by the Windows HID path, but required at module load on every OS.
+# ref-array-napi uses the same copy via the package.json override, so there is
+# no nested ref-napi to build anymore.
 build node_modules/ffi-napi
 build node_modules/ref-napi
-build node_modules/ref-array-napi/node_modules/ref-napi
 
 echo "==> done. Start the app with: npm start"

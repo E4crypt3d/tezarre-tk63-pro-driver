@@ -7,10 +7,18 @@
   "license": "ISC",
   "scripts": {
     "start": "electron .",
-    "rebuild:native": "bash scripts/rebuild-native.sh"
+    "rebuild:native": "node scripts/rebuild-native.js",
+    "rebuild:native:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-native.ps1",
+    "rebuild:native:unix": "bash scripts/rebuild-native.sh",
+    "prebuilt:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-native.ps1 -Prebuilt"
   },
   "engines": {
     "node": ">=18"
+  },
+  "overrides": {
+    "ref-array-napi": {
+      "ref-napi": "1.5.2"
+    }
   },
   "devDependencies": {
     "electron": "6.0.10",
