@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - package-lock.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and release ${{ github.ref_name }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: pkg
+        run: |
+          version="$(node -p "require('./package.json').version" | tr -d '\r')"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::package.json version '$version' is not a valid semantic version."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "installer=release/Tezarre-Driver-Setup-$version-ia32.exe" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if this version is already released
+        id: check
+        env:
+          TAG: ${{ steps.pkg.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null \
+            || git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$TAG already exists, so there is nothing to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install app dependencies
+        if: steps.check.outputs.exists == 'false'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install prebuilt 32-bit native addons
+        if: steps.check.outputs.exists == 'false'
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-native.ps1 -Prebuilt -SkipElectron
+
+      - name: Install packaging tools
+        id: tools
+        if: steps.check.outputs.exists == 'false'
+        shell: powershell
+        run: |
+          $tools = Join-Path $env:RUNNER_TEMP 'packaging-tools'
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+          Set-Content -Path (Join-Path $tools 'package.json') -Value '{"name":"packaging-tools","private":true}'
+          npm install --prefix $tools --ignore-scripts --no-audit --no-fund electron-builder@26.18.0 rcedit@4.0.1
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "tools=$tools`n", [System.Text.UTF8Encoding]::new($false))
+
+      - name: Build Windows installer
+        if: steps.check.outputs.exists == 'false'
+        shell: powershell
+        env:
+          PACKAGING_TOOLS: ${{ steps.tools.outputs.tools }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          node "$env:PACKAGING_TOOLS\node_modules\electron-builder\cli.js" --projectDir . --win nsis --ia32
+          $installer = '${{ steps.pkg.outputs.installer }}'
+          if (-not (Test-Path $installer)) {
+            throw "Installer was not produced at $installer"
+          }
+          Get-Item $installer | Select-Object Name, Length
+
+      - name: Create tag and GitHub release
+        if: steps.check.outputs.exists == 'false' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pkg.outputs.tag }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+          INSTALLER: ${{ steps.pkg.outputs.installer }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$TAG" --message "$TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
+
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          Tezarre TK-63 Pro Driver $VERSION.
+
+          ### Download
+
+          \`Tezarre-Driver-Setup-$VERSION-ia32.exe\` installs the app for the current user (no
+          administrator rights needed) and creates desktop and Start menu shortcuts.
+
+          ### Why only a 32-bit build
+
+          The keyboard is driven through the vendor bridge in \`dist/hid32.*.dll\`, which is x86.
+          64-bit Electron cannot load it (\`Win32 error 193\`) and the app would fail at startup, so
+          there is no x64 installer. The 32-bit build runs on both 32-bit and 64-bit Windows.
+
+          See [CHANGELOG.md](CHANGELOG.md) for what changed in this release.
+          EOF
+
+          gh release create "$TAG" "$INSTALLER" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag \
+            --latest
+
+      - name: Report skipped run
+        if: steps.check.outputs.exists == 'false' && github.ref != 'refs/heads/main'
+        run: echo "::notice::Releases are only published from main; nothing was tagged."

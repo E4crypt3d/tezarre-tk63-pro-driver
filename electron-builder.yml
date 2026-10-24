@@ -1,0 +1,61 @@
+# Build configuration for the Windows installer.
+#
+# The app is Electron 6 (Node 12 / ABI 73) and 32-bit on purpose: the vendor HID
+# bridge in dist/hid32.*.dll is an x86 DLL, and ffi-napi cannot load it into a
+# 64-bit Electron process (Win32 error 193), so only an ia32 build can talk to
+# the keyboard. The ia32 installer runs on both 32-bit and 64-bit Windows.
+appId: io.github.e4crypt3d.tezarre-tk63-pro-driver
+productName: Tezarre Driver
+
+directories:
+  output: release
+  buildResources: build
+
+# asar must stay off: src/sdk/DriverIO/win_dll/hid/bind.js loads
+# dist/hid32.<hash>.dll through ffi-napi, and dlopen() cannot read a file from
+# inside an asar archive.
+asar: false
+
+# Native modules are installed from prebuilt/win32-ia32 (ABI 73) by
+# scripts/rebuild-native.ps1 -Prebuilt; never let electron-builder rebuild them
+# against a different runtime.
+npmRebuild: false
+
+files:
+  - '**/*'
+  - '!prebuilt/**'
+  - '!scripts/**'
+  - '!.github/**'
+  - '!build/**'
+  - '!release/**'
+  - '!**/*.md'
+  - '!**/*.map'
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - ia32
+  # Electron 6's executable predates the PE layout that app-builder-lib's
+  # built-in editor understands, so editing it here fails with
+  # "After Resource section, sections except for relocation are not supported".
+  # scripts/after-pack.js applies the icon and version metadata with rcedit
+  # instead, which uses the Win32 resource APIs and handles the old image.
+  signAndEditExecutable: false
+  icon: build/icon.ico
+  artifactName: Tezarre-Driver-Setup-${version}-${arch}.${ext}
+
+afterPack: scripts/after-pack.js
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Tezarre Driver
+  uninstallDisplayName: Tezarre Driver
+  deleteAppDataOnUninstall: false
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
