@@ -88,7 +88,7 @@ jobs:
           PACKAGING_TOOLS: ${{ steps.tools.outputs.tools }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
-          node "$env:PACKAGING_TOOLS\node_modules\electron-builder\cli.js" --projectDir . --win nsis --ia32
+          node "$env:PACKAGING_TOOLS\node_modules\electron-builder\cli.js" --projectDir . --win nsis --ia32 --publish never
           $installer = '${{ steps.pkg.outputs.installer }}'
           if (-not (Test-Path $installer)) {
             throw "Installer was not produced at $installer"
